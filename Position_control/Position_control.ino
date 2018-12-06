@@ -18,36 +18,40 @@
   #define DEVICE_NAME "1" //Dynamixel on Serial3(USART3)  <-OpenCM 485EXP
 #include <DynamixelWorkbench.h>
 
-//#if defined(__OPENCM904__)
-
-//#elif defined(__OPENCR__)
-//  #define DEVICE_NAME ""
-//#endif   
+#include <ros.h>
+#include <std_msgs/Int16.h>
 
 #define BAUDRATE  1000000
 #define DXL_ID    3
 
 DynamixelWorkbench dxl_wb;
 
+
+ros::NodeHandle  nh;
+
+void messageCb( const std_msgs::Int16& msg) 
+{
+  dxl_wb.goalPosition(2, msg.data);
+}
+
+ros::Subscriber<std_msgs::Int16> sub("Servo2Pos", messageCb );
+
 void setup() 
 {
   Serial.begin(57600);
-   while(!Serial); // If this line is activated, you need to open Serial Terminal.
+  while(!Serial); // If this line is activated, you need to open Serial Terminal.
 
   dxl_wb.begin(DEVICE_NAME, BAUDRATE);
   dxl_wb.ping(DXL_ID);
   dxl_wb.jointMode(DXL_ID);
   dxl_wb.ping(2);
   dxl_wb.jointMode(2);
+
+  nh.initNode();
+  nh.subscribe(sub);
 }
 
 void loop() 
 {
-  dxl_wb.goalPosition(DXL_ID, 0);
-  dxl_wb.goalPosition(2, 300);
-  delay(2000);
-  dxl_wb.goalPosition(2, 600);
-  dxl_wb.goalPosition(DXL_ID, 1023);
-
-  delay(2000);
+  nh.spinOnce();
 }
